@@ -56,7 +56,10 @@
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
+        
+        // Configuração para forçar a janela nativa do Google sem bloqueios
         const provider = new GoogleAuthProvider();
+        provider.setCustomParameters({ prompt: 'select_account' });
 
         const btnLogin = document.getElementById('btnLogin');
         const gridProdutos = document.getElementById('gridProdutos');
@@ -68,19 +71,31 @@
             });
         }
 
-        getRedirectResult(auth).catch(error => console.error("Erro no retorno do login:", error));
+        // Monitora o resultado do redirecionamento
+        getRedirectResult(auth)
+            .then((result) => {
+                if (result?.user) {
+                    console.log("Usuário logado via redirecionamento:", result.user);
+                }
+            })
+            .catch(error => {
+                console.error("Erro no retorno do login:", error);
+                alert("Erro ao validar login: " + error.message);
+            });
 
+        // Monitorar o estado real da sessão
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 authSection.innerHTML = `
-                    <span class="text-sm text-gray-400 font-semibold">Olá, ${user.displayName.split(' ')}</span>
+                    <span class="text-sm text-gray-400 font-semibold">Olá, ${user.displayName ? user.displayName.split(' ')[0] : 'Usuário'}</span>
                     <a href="anunciar.html" class="text-sm font-semibold bg-gradient-to-r from-purple-600 to-blue-600 transition px-5 py-2.5 rounded-full shadow-md">Anunciar</a>
                     <button id="btnLogout" class="text-xs text-red-400 hover:underline ml-2">Sair</button>
                 `;
-                document.getElementById('btnLogout').addEventListener('click', () => signOut(auth));
+                document.getElementById('btnLogout').addEventListener('click', () => signOut(auth).then(() => window.location.reload()));
             }
         });
 
+        // Buscar produtos
         async function carregarProdutos() {
             try {
                 const q = query(collection(db, "produtos"), orderBy("criadoEm", "desc"));
