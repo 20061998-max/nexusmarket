@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anunciar Produto - NexusMarket</title>
+    <script src="https://tailwindcss.com"></script>
+    <style>
+        .glass { background: rgba(255, 255, 255, 0.02); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); }
+        .input-field { background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); transition: all 0.3s ease; }
+        .input-field:focus { border-color: #a855f7; box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.2); outline: none; }
+    </style>
+</head>
+<body class="bg-[#0b0f19] text-gray-100 font-sans antialiased min-h-screen flex items-center justify-center py-12 px-4 relative">
+    
+    <div class="w-full max-w-2xl glass rounded-3xl p-8 md:p-10 shadow-2xl relative z-10">
+        <div class="mb-8">
+            <a href="index.html" class="text-sm text-purple-400 hover:text-purple-300 transition mb-2 inline-block">← Voltar para a Vitrine</a>
+            <h1 class="text-3xl font-black tracking-tight mt-1">Anunciar Novo Produto</h1>
+            <p class="text-gray-400 text-sm mt-1">Insira os dados bem estruturados (valor, descrição e link) do seu infoproduto.</p>
+        </div>
+
+        <form id="productForm" class="space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="md:col-span-2">
+                    <label class="block text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Título do Produto *</label>
+                    <input type="text" id="prodTitle" required placeholder="Ex: E-book Javascript do Zero" class="w-full px-4 py-3 rounded-xl input-field text-white text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Categoria *</label>
+                    <select id="prodCategory" required class="w-full px-4 py-3 rounded-xl input-field text-gray-300 text-sm cursor-pointer">
+                        <option value="ebook">📚 E-book / Livro</option>
+                        <option value="app">💻 App / Software</option>
+                    </select>
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Descrição Curta * (Aparece no card - Máx. 120 caracteres)</label>
+                <input type="text" id="prodShortDesc" required maxlength="120" placeholder="Resuma o benefício do seu produto em uma frase curta..." class="w-full px-4 py-3 rounded-xl input-field text-white text-sm">
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Preço de Venda (R$) *</label>
+                    <input type="number" id="prodPrice" required step="0.01" min="4.99" placeholder="29.90" class="w-full px-4 py-3 rounded-xl input-field text-white text-sm font-mono">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Link de Entrega do Produto *</label>
+                    <input type="url" id="prodFileUrl" required placeholder="Link do arquivo (Google Drive/Dropbox/Mega)" class="w-full px-4 py-3 rounded-xl input-field text-white text-sm">
+                </div>
+            </div>
+
+            <button type="submit" id="btnEnviar" class="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:opacity-90 font-bold py-4 rounded-xl transition shadow-lg">
+                🚀 Publicar Produto e Iniciar Vendas
+            </button>
+        </form>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://gstatic.com";
+        import { getAuth, onAuthStateChanged } from "https://gstatic.com";
+        import { getFirestore, collection, addDoc } from "https://gstatic.com";
+
+        // Suas chaves reais configuradas
+        const firebaseConfig = {
+            apiKey: "AIzaSyCCW26RvgXvp_0q-kkg2QRU6m0MP9li9xs",
+            authDomain: "://firebaseapp.com",
+            projectId: "meusite-8eaff",
+            storageBucket: "meusite-8eaff.firebasestorage.app",
+            messagingSenderId: "835005102225",
+            appId: "1:835005102225:web:c4c612b03ceeaf44136730",
+            measurementId: "G-EZG50LPV0M"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        let usuarioAtual = null;
+
+        // Verifica se o usuário está logado
+        onAuthStateChanged(auth, (user) => {
+            if (!user) {
+                alert("Para anunciar, faça login com o Google na página inicial!");
+                window.location.href = "index.html";
+            } else {
+                usuarioAtual = user;
+            }
+        });
+
+        // Envia os dados para o Firestore
+        document.getElementById('productForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('btnEnviar');
+            btn.disabled = true;
+            btn.innerText = "Publicando produto...";
+
+            try {
+                await addDoc(collection(db, "produtos"), {
+                    titulo: document.getElementById('prodTitle').value,
+                    categoria: document.getElementById('prodCategory').value,
+                    descricaoCurta: document.getElementById('prodShortDesc').value,
+                    preco: parseFloat(document.getElementById('prodPrice').value),
+                    arquivoUrl: document.getElementById('prodFileUrl').value,
+                    vendedorUid: usuarioAtual.uid,
+                    criadoEm: new Date()
+                });
+
+                alert("Produto estruturado com sucesso no banco de dados!");
+                window.location.href = "index.html";
+            } catch (err) {
+                console.error(err);
+                alert("Erro ao publicar anúncio. Verifique o console.");
+                btn.disabled = false;
+                btn.innerText = "🚀 Publicar Produto e Iniciar Vendas";
+            }
+        });
+    </script>
+</body>
+</html>
