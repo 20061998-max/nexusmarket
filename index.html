@@ -21,7 +21,7 @@
         </div>
     </nav>
 
-    <!-- TOPO DO SITE (HERO) -->
+    <!-- TOPO DO SITE -->
     <header class="relative pt-32 pb-10 px-6 max-w-7xl mx-auto text-center flex flex-col items-center justify-center min-h-[60vh]">
         <div class="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-purple-600/10 rounded-full blur-[120px] pointer-events-none"></div>
         <span class="px-4 py-1.5 rounded-full glass text-xs font-semibold text-purple-400 uppercase tracking-widest mb-6 block border border-purple-500/30">Nova Era Digital</span>
@@ -37,13 +37,12 @@
         </div>
     </section>
 
-    <!-- INTEGRAÇÃO DIRETA COM O SEU FIREBASE -->
+    <!-- INTEGRAÇÃO ATUALIZADA DO FIREBASE -->
     <script type="module">
         import { initializeApp } from "https://gstatic.com";
-        import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from "https://gstatic.com";
+        import { getAuth, signInWithRedirect, GoogleAuthProvider, signOut, onAuthStateChanged, getRedirectResult } from "https://gstatic.com";
         import { getFirestore, collection, getDocs, query, orderBy } from "https://gstatic.com";
 
-        // Suas chaves reais configuradas
         const firebaseConfig = {
             apiKey: "AIzaSyCCW26RvgXvp_0q-kkg2QRU6m0MP9li9xs",
             authDomain: "://firebaseapp.com",
@@ -65,15 +64,16 @@
 
         if(btnLogin) {
             btnLogin.addEventListener('click', () => {
-                signInWithPopup(auth, provider).catch(error => console.error("Erro login:", error));
+                signInWithRedirect(auth, provider);
             });
         }
 
-        // Monitorar se o usuário está logado
+        getRedirectResult(auth).catch(error => console.error("Erro no retorno do login:", error));
+
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 authSection.innerHTML = `
-                    <span class="text-sm text-gray-400 hidden sm:inline font-semibold">Olá, ${user.displayName.split(' ')[0]}</span>
+                    <span class="text-sm text-gray-400 font-semibold">Olá, ${user.displayName.split(' ')}</span>
                     <a href="anunciar.html" class="text-sm font-semibold bg-gradient-to-r from-purple-600 to-blue-600 transition px-5 py-2.5 rounded-full shadow-md">Anunciar</a>
                     <button id="btnLogout" class="text-xs text-red-400 hover:underline ml-2">Sair</button>
                 `;
@@ -81,7 +81,6 @@
             }
         });
 
-        // Buscar produtos salvos do banco de dados em tempo real
         async function carregarProdutos() {
             try {
                 const q = query(collection(db, "produtos"), orderBy("criadoEm", "desc"));
@@ -126,5 +125,4 @@
         carregarProdutos();
     </script>
 </body>
-          </html>
-          
+</html>
